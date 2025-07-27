@@ -12,17 +12,39 @@ const LoginForm: React.FC = () => {
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      await login(email, password);
-      navigate('/');
+      const res = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        login(data.token, data.user);
+        navigate('/');
+        alert('Logged in!');
+      } else {
+        alert(data.message || 'Error');
+      }
     } catch (err) {
-      setError('Invalid email or password. Please try again.');
+      console.error(err);
     }
   };
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setError('');
+
+  //   try {
+  //     await login(email, password);
+  //     navigate('/');
+  //   } catch (err) {
+  //     setError('Invalid email or password. Please try again.');
+  //   }
+  // };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -39,7 +61,7 @@ const LoginForm: React.FC = () => {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
           {error && (
             <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-md">
               {error}

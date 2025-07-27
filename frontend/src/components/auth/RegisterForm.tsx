@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+//import { AuthContext } from '../../context/AuthContext';
 import LoadingSpinner from '../common/LoadingSpinner';
 
 const RegisterForm: React.FC = () => {
@@ -12,30 +13,65 @@ const RegisterForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
-  const { register, isLoading } = useAuth();
+  const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
+  const handleRegister = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      return;
-    }
+  if (password !== confirmPassword) {
+    setError('Passwords do not match');
+    return;
+  }
 
-    try {
-      await register(name, email, password);
+  if (password.length < 6) {
+    setError('Password must be at least 6 characters long');
+    return;
+  }
+
+  try {
+    const res = await fetch('http://localhost:5000/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      login(data.token, data.user);
       navigate('/');
-    } catch (err) {
-      setError('Registration failed. Please try again.');
+    } else {
+      setError(data.message || 'Error');
     }
-  };
+  } catch (err) {
+    console.error(err);
+    setError('Something went wrong');
+  }
+};
+
+
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setError('');
+
+  //   if (password !== confirmPassword) {
+  //     setError('Passwords do not match');
+  //     return;
+  //   }
+
+  //   if (password.length < 6) {
+  //     setError('Password must be at least 6 characters long');
+  //     return;
+  //   }
+
+  //   try {
+  //     await register(name, email, password);
+  //     navigate('/');
+  //   } catch (err) {
+  //     setError('Registration failed. Please try again.');
+  //   }
+  // };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -52,7 +88,7 @@ const RegisterForm: React.FC = () => {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6" onSubmit={handleRegister}>
           {error && (
             <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-md">
               {error}
