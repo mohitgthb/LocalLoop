@@ -9,6 +9,9 @@ interface BusinessCardProps {
 }
 
 const BusinessCard: React.FC<BusinessCardProps> = ({ business }) => {
+
+  console.log('BusinessCard rendered for:', business._id);
+
   return (
     <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
       {/* Image */}
@@ -37,7 +40,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business }) => {
       <div className="p-4">
         <div className="flex items-start justify-between mb-2">
           <h3 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
-            <Link to={`/listing/${business.id}`}>{business.name}</Link>
+            <Link to={`/listing/${business._id}`}>{business.name}</Link>
           </h3>
           <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
             {business.category}
@@ -97,7 +100,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business }) => {
         )}
 
         <Link
-          to={`/listing/${business.id}`}
+          to={`/listing/${business._id}`}
           className="block w-full text-center bg-primary-600 text-white py-2 rounded-lg hover:bg-primary-700 transition-colors font-medium"
         >
           View Details

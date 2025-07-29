@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Filter } from 'lucide-react';
 import SearchBar from '../components/common/SearchBar';
 import FilterSidebar from '../components/discovery/FilterSidebar';
 import BusinessCard from '../components/discovery/BusinessCard';
-import { mockBusinesses } from '../data/mockData';
+//import { mockBusinesses } from '../data/mockData';
 
 const Discover: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
@@ -15,9 +15,25 @@ const Discover: React.FC = () => {
     priceRange: [] as string[],
     featuredOnly: false,
   });
+  const [businesses, setBusinesses] = useState<any[]>([]);
+
+
+  useEffect(() => {
+  const fetchBusinesses = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/businesses'); // <-- your API route
+      const data = await res.json();
+      setBusinesses(data);
+    } catch (err) {
+      console.error('Failed to fetch businesses:', err);
+    }
+  };
+
+  fetchBusinesses();
+}, []);
 
   const filteredBusinesses = useMemo(() => {
-    return mockBusinesses.filter((business) => {
+    return businesses.filter((business) => {
       // Search query filter
       if (searchQuery && !business.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
           !business.description.toLowerCase().includes(searchQuery.toLowerCase()) &&
@@ -53,7 +69,7 @@ const Discover: React.FC = () => {
 
       return true;
     });
-  }, [searchQuery, searchLocation, filters]);
+  }, [businesses, searchQuery, searchLocation, filters]);
 
   const handleSearch = (query: string, location: string) => {
     setSearchQuery(query);
@@ -94,11 +110,11 @@ const Discover: React.FC = () => {
           </div>
 
           {/* Mobile Filter Sidebar */}
-          <FilterSidebar
+          {/* <FilterSidebar
             isOpen={showFilters}
             onClose={() => setShowFilters(false)}
             onFilterChange={handleFilterChange}
-          />
+          /> */}
 
           {/* Results */}
           <div className="flex-1">
@@ -138,7 +154,7 @@ const Discover: React.FC = () => {
             ) : (
               <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredBusinesses.map((business) => (
-                  <BusinessCard key={business.id} business={business} />
+                  <BusinessCard key={business._id} business={business} />
                 ))}
               </div>
             )}

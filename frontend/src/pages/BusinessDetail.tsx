@@ -1,17 +1,142 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { 
-  MapPin, Phone, Globe, Clock, Star, Badge, ArrowLeft, 
-  Calendar, Heart, Share2, Bookmark 
+import {
+  MapPin, Phone, Globe, Clock, Star, Badge, ArrowLeft,
+  Calendar, Heart, Share2, Bookmark
 } from 'lucide-react';
-import { mockBusinesses } from '../data/mockData';
+// import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+// import L from 'leaflet';
+//import { mockBusinesses } from '../data/mockData';
 import RatingStars from '../components/common/RatingStars';
+import { useAuth } from '../context/AuthContext';
+
+
+interface Business {
+  _id: string;
+  name: string;
+  description: string;
+  category: string;
+  images: string[];
+  rating: number;
+  reviewCount: number;
+  priceRange: string;
+  location: {
+    address: string;
+    city: string;
+    coordinates: [number, number];
+  };
+  contact: {
+    phone: string;
+    email: string;
+    website: string;
+  };
+  hours: Record<string, string>;
+  featured: boolean;
+  badges: string[];
+  discounts: {
+    title: string;
+    description: string;
+    code: string;
+    validUntil: string;
+  }[];
+}
 
 const BusinessDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const business = mockBusinesses.find(b => b.id === id);
+  const { user } = useAuth();
+  const { _id } = useParams<{ _id: string }>();
+  const [business, setBusiness] = useState<Business | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  //
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewText, setReviewText] = useState('');
+  const [rating, setRating] = useState(0);
+  const [userPosition, setUserPosition] = useState<[number, number] | null>(null);
 
-  if (!business) {
+
+  console.log('Business ID:', _id);
+
+
+  useEffect(() => {
+    const fetchBusiness = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/businesses/${_id}`);
+
+        if (!res.ok) {
+          throw new Error('Business not found');
+        }
+        const data = await res.json();
+        setBusiness(data);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load business');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBusiness();
+  }, [_id]);
+
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserPosition([position.coords.latitude, position.coords.longitude]);
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+      }
+    );
+  }, []);
+
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (!business) return;
+
+  const newReview = {
+    userName: user?.name || 'Anonymous', // ✅ get from auth
+    text: reviewText,
+    rating: rating,
+  };
+
+  try {
+    const res = await fetch(`http://localhost:5000/api/businesses/${business._id}/reviews`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newReview),
+    });
+
+    if (!res.ok) {
+      throw new Error('Failed to submit review');
+    }
+
+    const updatedBusiness = await res.json();
+
+    console.log('Review saved!', updatedBusiness);
+
+    setBusiness(updatedBusiness);
+    setReviewText('');
+    setRating(0);
+    setShowReviewForm(false);
+  } catch (error) {
+    console.error('Error submitting review:', error);
+  }
+};
+
+
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-gray-900">Loading...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !business) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -23,6 +148,7 @@ const BusinessDetail: React.FC = () => {
       </div>
     );
   }
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -71,7 +197,7 @@ const BusinessDetail: React.FC = () => {
                   </button>
                 </div>
               </div>
-              
+
               {business.images.length > 1 && (
                 <div className="p-4">
                   <div className="flex space-x-4 overflow-x-auto">
@@ -176,6 +302,7 @@ const BusinessDetail: React.FC = () => {
             </div>
           </div>
 
+
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Contact Info */}
@@ -189,11 +316,11 @@ const BusinessDetail: React.FC = () => {
                     <p className="text-gray-600">{business.location.city}</p>
                   </div>
                 </div>
-                
+
                 {business.contact.phone && (
                   <div className="flex items-center">
                     <Phone className="w-5 h-5 text-primary-600 mr-3 flex-shrink-0" />
-                    <a 
+                    <a
                       href={`tel:${business.contact.phone}`}
                       className="text-primary-600 hover:text-primary-700 font-medium"
                     >
@@ -201,11 +328,11 @@ const BusinessDetail: React.FC = () => {
                     </a>
                   </div>
                 )}
-                
+
                 {business.contact.website && (
                   <div className="flex items-center">
                     <Globe className="w-5 h-5 text-primary-600 mr-3 flex-shrink-0" />
-                    <a 
+                    <a
                       href={business.contact.website}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -222,17 +349,74 @@ const BusinessDetail: React.FC = () => {
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
               <div className="space-y-3">
-                <button className="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition-colors font-medium">
+                <button
+                  onClick={() => {
+                    if (!userPosition) {
+                      alert('Location not found. Please enable location services.');
+                      return;
+                    }
+                    const [lat1, lon1] = userPosition;
+                    const [lat2, lon2] = business.location.coordinates;
+
+                    window.open(
+                      `https://www.google.com/maps/dir/${lat1},${lon1}/${lat2},${lon2}`,
+                      '_blank'
+                    );
+                  }}
+                  className="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition-colors font-medium">
                   Get Directions
                 </button>
                 <button className="w-full bg-secondary-600 text-white py-3 rounded-lg hover:bg-secondary-700 transition-colors font-medium">
                   Call Now
                 </button>
-                <button className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                <button
+                  onClick={() => setShowReviewForm(!showReviewForm)}
+                  className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 transition-colors font-medium">
                   Write a Review
                 </button>
               </div>
             </div>
+            {showReviewForm && (
+              <div className="bg-white rounded-xl shadow-lg p-6 mt-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Write a Review</h3>
+                <form onSubmit={handleSubmitReview} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Your Rating</label>
+                    <div className="flex space-x-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setRating(star)}
+                          className={`w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center ${rating >= star ? 'bg-yellow-400 text-white' : 'bg-white'
+                            }`}
+                        >
+                          {star}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Your Review</label>
+                    <textarea
+                      value={reviewText}
+                      onChange={(e) => setReviewText(e.target.value)}
+                      rows={4}
+                      required
+                      className="w-full border border-gray-300 rounded-lg p-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Share your experience..."
+                    ></textarea>
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition-colors font-medium"
+                  >
+                    Submit Review
+                  </button>
+                </form>
+              </div>
+            )}
+
 
             {/* Share */}
             <div className="bg-white rounded-xl shadow-lg p-6">
