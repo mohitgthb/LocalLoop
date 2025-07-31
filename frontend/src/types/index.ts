@@ -7,6 +7,7 @@ export interface User {
   joinedAt: string;
 }
 
+
 export interface Business {
   _id: string;
   name: string;
@@ -37,10 +38,11 @@ export interface Business {
     code?: string;
     validUntil: string;
   }[];
+
 }
 
 export interface BlogPost {
-  id: string;
+  _id: string;
   title: string;
   slug: string;
   excerpt: string;
@@ -48,7 +50,7 @@ export interface BlogPost {
   author: {
     name: string;
     avatar: string;
-    bio: string;
+    bio?: string;
   };
   category: string;
   featured: boolean;
@@ -61,7 +63,7 @@ export interface BlogPost {
 }
 
 export interface Comment {
-  id: string;
+  _id: string;
   content: string;
   author: {
     name: string;
@@ -73,29 +75,41 @@ export interface Comment {
   replies?: Comment[];
 }
 
+// 👉 Example: types.ts
 export interface ForumThread {
-  id: string;
+  _id: string;
   title: string;
   content: string;
+  category: string;
+  tags: string[];
+  upvotes: number;
+  downvotes: number;
+  replyCount: number;
+  isPinned: boolean;
+
+  // These must exist 👇
   author: {
     name: string;
     avatar: string;
   };
-  category: string;
   createdAt: string;
-  updatedAt: string;
-  upvotes: number;
-  downvotes: number;
-  userVote?: 'up' | 'down';
-  replyCount: number;
-  replies: ForumReply[];
-  isPinned: boolean;
+  replies: Array<{
+    _id: string;
+    content: string;
+    author: {
+      name: string;
+      avatar: string;
+    };
+    createdAt: string;
+  }>;
   isLocked: boolean;
-  tags: string[];
+  updatedAt: string; // If you sort by updatedAt
+  userVote?: 'up' | 'down'; // Optional, if user has voted
 }
 
+
 export interface ForumReply {
-  id: string;
+  _id: string;
   content: string;
   author: {
     name: string;

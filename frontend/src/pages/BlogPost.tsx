@@ -1,13 +1,156 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, User, Heart, Share2, MessageSquare } from 'lucide-react';
 import { mockBlogPosts } from '../data/mockData';
+import { useAuth } from '../context/AuthContext';
+
+
+interface BlogPost {
+  _id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  author: {
+    name: string;
+    avatar: string;
+    bio?: string;
+  };
+  heroImage: string;
+  category: string;
+  tags: string[];
+  featured: boolean;
+  createdAt: string;
+  publishedAt: string;
+  readTime: number;
+  likes: number;
+  comments: Array<{
+    _id: string;
+    content: string;
+    author: {
+      name: string;
+      avatar: string;
+    };
+    createdAt: string;
+    likes: number;
+  }>;
+}
+
 
 const BlogPost: React.FC = () => {
+  const { user } = useAuth();
   const { slug } = useParams<{ slug: string }>();
-  const post = mockBlogPosts.find(p => p.slug === slug);
+  const [post, setPost] = useState<BlogPost | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [newComment, setNewComment] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [hasLiked, setHasLiked] = useState(false);
 
-  if (!post) {
+
+  //const post = mockBlogPosts.find(p => p.slug === slug);
+
+  useEffect(() => {
+    const fetchPost = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/posts/${slug}`);
+        if (!res.ok) throw new Error('Post not found');
+        const data = await res.json();
+        setPost(data);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load post');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPost();
+  }, [slug]);
+
+  const handleSubmitComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+
+    setSubmitting(true);
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/posts/${slug}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+        },
+        body: JSON.stringify({
+          content: newComment,
+          authorAvatar: 'https://placehold.co/40x40',
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to post comment');
+      const updatedPost = await res.json();
+      setPost(updatedPost); // update state with new comment
+      setNewComment(''); // clear form
+    } catch (err) {
+      console.error(err);
+      alert('Could not post comment.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleToggleLike = async () => {
+  if (hasLiked) {
+    // If already liked → dislike
+    try {
+      const res = await fetch(`http://localhost:5000/api/posts/${slug}/dislike`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+        },
+      });
+
+      if (!res.ok) throw new Error('Failed to dislike post');
+      const updatedPost = await res.json();
+      setPost(updatedPost);
+      setHasLiked(false);
+    } catch (err) {
+      console.error(err);
+      alert('Could not dislike post.');
+    }
+  } else {
+    // If not liked → like
+    try {
+      const res = await fetch(`http://localhost:5000/api/posts/${slug}/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+        },
+      });
+
+      if (!res.ok) throw new Error('Failed to like post');
+      const updatedPost = await res.json();
+      setPost(updatedPost);
+      setHasLiked(true);
+    } catch (err) {
+      console.error(err);
+      alert('Could not like post.');
+    }
+  }
+};
+
+
+
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-700 text-lg">Loading...</p>
+      </div>
+    );
+  }
+
+  if (error || !post) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -19,6 +162,7 @@ const BlogPost: React.FC = () => {
       </div>
     );
   }
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -70,11 +214,11 @@ const BlogPost: React.FC = () => {
                 {post.readTime} min read
               </div>
             </div>
-            
+
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               {post.title}
             </h1>
-            
+
             <p className="text-xl text-gray-600 leading-relaxed mb-6">
               {post.excerpt}
             </p>
@@ -92,11 +236,18 @@ const BlogPost: React.FC = () => {
                   <p className="text-gray-600 text-sm">{post.author.bio}</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <div className="flex items-center text-gray-600">
-                  <Heart className="w-5 h-5 mr-1" />
-                  {post.likes}
+                  <button onClick={handleToggleLike} className="flex items-center space-x-1">
+                    <Heart
+                      className={`w-6 h-6 ${hasLiked ? 'text-red-500' : 'text-gray-500'}`}
+                      fill={hasLiked ? 'red' : 'none'}
+                    />
+                    {post.likes}
+                  </button>
+
+
                 </div>
                 <div className="flex items-center text-gray-600">
                   <MessageSquare className="w-5 h-5 mr-1" />
@@ -162,7 +313,7 @@ const BlogPost: React.FC = () => {
           {/* Social Actions */}
           <div className="mt-8 pt-6 border-t border-gray-200 flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <button className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+              <button  onClick={handleToggleLike} className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
                 <Heart className="w-4 h-4 mr-2" />
                 Like ({post.likes})
               </button>
@@ -179,11 +330,11 @@ const BlogPost: React.FC = () => {
           <h3 className="text-2xl font-bold text-gray-900 mb-6">
             Comments ({post.comments.length})
           </h3>
-          
+
           {post.comments.length > 0 ? (
             <div className="space-y-6">
               {post.comments.map((comment) => (
-                <div key={comment.id} className="flex space-x-4">
+                <div key={comment._id} className="flex space-x-4">
                   <img
                     src={comment.author.avatar}
                     alt={comment.author.name}
@@ -214,21 +365,24 @@ const BlogPost: React.FC = () => {
           ) : (
             <p className="text-gray-600">No comments yet. Be the first to comment!</p>
           )}
-          
+
           {/* Comment Form */}
           <div className="mt-8 pt-6 border-t border-gray-200">
             <h4 className="text-lg font-semibold text-gray-900 mb-4">Leave a Comment</h4>
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleSubmitComment}>
               <textarea
                 rows={4}
                 placeholder="Write your comment..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none resize-none"
               />
               <button
                 type="submit"
+                disabled={submitting}
                 className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors font-medium"
               >
-                Post Comment
+                {submitting ? 'Posting...' : 'Post Comment'}
               </button>
             </form>
           </div>

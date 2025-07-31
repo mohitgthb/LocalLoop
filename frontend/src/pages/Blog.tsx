@@ -1,14 +1,66 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import BlogCard from '../components/blog/BlogCard';
 import { mockBlogPosts, blogCategories } from '../data/mockData';
 
+
+interface BlogPost {
+  _id: string;
+  id?: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  author: {
+    name: string;
+    avatar: string;
+    bio?: string;
+  };
+  heroImage: string;
+  category: string;
+  tags: string[];
+  featured: boolean;
+  createdAt: string;
+  publishedAt: string;  // ✅ Add this
+  readTime: number;     // ✅ Add this
+  likes: number;        // ✅ Add this
+  comments: Array<{
+    _id: string;
+    content: string;
+    author: {
+      name: string;
+      avatar: string;
+    };
+    createdAt: string;
+    likes: number;
+  }>;
+}
+
 const Blog: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+  const fetchBlogs = async () => {
+    const res = await fetch('http://localhost:5000/api/posts');
+    const data = await res.json();
+
+    const posts = data.map((post: any) => ({
+      ...post,
+      id: post._id, // 👈 Add id field for BlogCard
+    }));
+
+    setBlogPosts(posts);
+    setLoading(false);
+  };
+  fetchBlogs();
+}, []);
+
 
   const filteredPosts = useMemo(() => {
-    return mockBlogPosts.filter((post) => {
+      return blogPosts.filter((post) => {
       // Category filter
       if (selectedCategory !== 'All' && post.category !== selectedCategory) {
         return false;
@@ -24,7 +76,7 @@ const Blog: React.FC = () => {
 
       return true;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory, searchQuery, blogPosts]);
 
   const featuredPosts = filteredPosts.filter(post => post.featured);
   const regularPosts = filteredPosts.filter(post => !post.featured);
@@ -105,7 +157,7 @@ const Blog: React.FC = () => {
                   </div>
                   <div className="space-y-6">
                     {featuredPosts.slice(1, 3).map((post) => (
-                      <BlogCard key={post.id} post={post} />
+                      <BlogCard key={post._id} post={post} />
                     ))}
                   </div>
                 </div>
@@ -120,7 +172,7 @@ const Blog: React.FC = () => {
                 )}
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {regularPosts.map((post) => (
-                    <BlogCard key={post.id} post={post} />
+                    <BlogCard key={post._id} post={post} />
                   ))}
                 </div>
               </div>

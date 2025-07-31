@@ -10,6 +10,12 @@ import {
 import RatingStars from '../components/common/RatingStars';
 import { useAuth } from '../context/AuthContext';
 
+interface Review {
+  userName: string;
+  text: string;
+  rating: number;
+  createdAt?: string;
+}
 
 interface Business {
   _id: string;
@@ -39,6 +45,7 @@ interface Business {
     code: string;
     validUntil: string;
   }[];
+  reviews: Review[];
 }
 
 const BusinessDetail: React.FC = () => {
@@ -94,8 +101,10 @@ const BusinessDetail: React.FC = () => {
 
   if (!business) return;
 
+  console.log(localStorage.getItem('user'));
+  console.log("Current user:", user);
+
   const newReview = {
-    userName: user?.name || 'Anonymous', // ✅ get from auth
     text: reviewText,
     rating: rating,
   };
@@ -103,7 +112,11 @@ const BusinessDetail: React.FC = () => {
   try {
     const res = await fetch(`http://localhost:5000/api/businesses/${business._id}/reviews`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        // ✅ If using JWT, send it:
+        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+      },
       body: JSON.stringify(newReview),
     });
 
@@ -123,6 +136,7 @@ const BusinessDetail: React.FC = () => {
     console.error('Error submitting review:', error);
   }
 };
+
 
 
 
@@ -302,7 +316,6 @@ const BusinessDetail: React.FC = () => {
             </div>
           </div>
 
-
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Contact Info */}
@@ -376,6 +389,7 @@ const BusinessDetail: React.FC = () => {
                 </button>
               </div>
             </div>
+
             {showReviewForm && (
               <div className="bg-white rounded-xl shadow-lg p-6 mt-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Write a Review</h3>
@@ -417,6 +431,31 @@ const BusinessDetail: React.FC = () => {
               </div>
             )}
 
+            {/* Reviews Section */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Customer Reviews</h3>
+
+              {business.reviews.length === 0 && (
+                <p className="text-gray-600">No reviews yet. Be the first to write one!</p>
+              )}
+
+              <ul className="space-y-4">
+                {business.reviews.map((review, index) => (
+                  <li key={index} className="border-b border-gray-200 pb-4">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-semibold text-gray-800">{review.userName}</span>
+                      <span className="text-yellow-500">{'⭐'.repeat(review.rating)}</span>
+                    </div>
+                    <p className="text-gray-700">{review.text}</p>
+                    {review.createdAt && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(review.createdAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
 
             {/* Share */}
             <div className="bg-white rounded-xl shadow-lg p-6">

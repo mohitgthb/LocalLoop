@@ -64,7 +64,7 @@ const ThreadCard: React.FC<ThreadCardProps> = ({ thread }) => {
           </div>
 
           <h3 className="text-lg font-semibold text-gray-900 mb-2 hover:text-primary-600 transition-colors">
-            <Link to={`/forum/${thread.id}`} className="line-clamp-2">
+            <Link to={`/forum/${thread._id}`} className="line-clamp-2">
               {thread.title}
             </Link>
           </h3>

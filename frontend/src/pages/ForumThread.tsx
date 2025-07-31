@@ -1,15 +1,103 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
   ArrowLeft, ArrowUp, ArrowDown, MessageSquare, Pin, Lock, 
   Calendar, User, Heart, Flag, MoreHorizontal 
 } from 'lucide-react';
 import { mockForumThreads } from '../data/mockData';
+import { useAuth } from '../context/AuthContext'; // adjust path
+
+
+interface Thread {
+  _id: string;
+  title: string;
+  content: string;
+  author: {
+    name: string;
+    avatar: string;
+  };
+  category: string;
+  createdAt: string;
+  updatedAt: string;
+  upvotes: number;
+  downvotes: number;
+  userVote?: 'up' | 'down';
+  replyCount: number;
+  replies: Array<{
+    _id: string;
+    content: string;
+    author: {
+      name: string;
+      avatar: string;
+    };
+    createdAt: string;
+    upvotes: number;
+    downvotes: number;
+    userVote?: 'up' | 'down';
+  }>;
+  isPinned: boolean;
+  isLocked: boolean;
+  tags: string[];
+}
 
 const ForumThread: React.FC = () => {
-  const { threadId } = useParams<{ threadId: string }>();
-  const thread = mockForumThreads.find(t => t.id === threadId);
+  const { user, token } = useAuth(); // Get current user from context
+  const { _id } = useParams<{ _id: string }>();
+  // const thread = mockForumThreads.find(t => t._id === threadId);
+  const [thread, setThread] = useState<Thread | null>(null);
+  const [loading, setLoading] = useState(true);
   const [replyContent, setReplyContent] = useState('');
+
+  useEffect(() => {
+    const fetchThread = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/threads/${_id}`);
+        if (!res.ok) throw new Error('Thread not found');
+        const data = await res.json();
+        setThread(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchThread();
+  }, [_id]);
+  
+
+  const handleSubmitReply = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!thread) return;
+
+  try {
+    const res = await fetch(`http://localhost:5000/api/threads/${thread._id}/replies`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`, // ✅ attach JWT
+      },
+      body: JSON.stringify({ content: replyContent }),
+    });
+
+    if (!res.ok) {
+      throw new Error('Failed to post reply');
+    }
+
+    const updatedThread = await res.json();
+    setThread(updatedThread); // ✅ update local thread
+    setReplyContent('');
+  } catch (err) {
+    console.error('Error submitting reply:', err);
+  }
+};
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-700">Loading...</p>
+      </div>
+    );
+  }
 
   if (!thread) {
     return (
@@ -43,13 +131,6 @@ const ForumThread: React.FC = () => {
       return type === 'up' ? 'text-secondary-600 bg-secondary-50' : 'text-red-600 bg-red-50';
     }
     return 'text-gray-400 hover:text-gray-600 hover:bg-gray-50';
-  };
-
-  const handleSubmitReply = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle reply submission
-    console.log('Submitting reply:', replyContent);
-    setReplyContent('');
   };
 
   return (
@@ -159,7 +240,7 @@ const ForumThread: React.FC = () => {
           </h2>
 
           {thread.replies.map((reply) => (
-            <div key={reply.id} className="bg-white rounded-xl shadow-lg p-6">
+            <div key={reply._id} className="bg-white rounded-xl shadow-lg p-6">
               <div className="flex items-start space-x-4">
                 {/* Vote Section */}
                 <div className="flex flex-col items-center space-y-1 min-w-[2.5rem]">

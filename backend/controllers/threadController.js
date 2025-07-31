@@ -36,15 +36,32 @@ exports.createThread = async (req, res) => {
 exports.addReply = async (req, res) => {
   try {
     const thread = await Thread.findById(req.params.id);
-    if (!thread) return res.status(404).json({ message: 'Thread not found' });
+    if (!thread) {
+      return res.status(404).json({ message: "Thread not found" });
+    }
 
-    thread.replies.push(req.body);
+    const reply = {
+      content: req.body.content,
+      author: {
+        name: req.user.name, // ✅ from JWT user
+        avatar: req.user.avatar || '', // if you store avatar
+      },
+      createdAt: new Date(),
+      upvotes: 0,
+      downvotes: 0,
+    };
+
+    thread.replies.push(reply);
+    thread.replyCount += 1;
+
     await thread.save();
-    res.status(201).json(thread);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
+
+    res.status(200).json(thread);
+  } catch (error) {
+    res.status(500).json({ message: "Error adding reply", error });
   }
 };
+
 
 // Upvote thread
 exports.upvoteThread = async (req, res) => {

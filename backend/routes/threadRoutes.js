@@ -7,11 +7,12 @@ const {
   addReply,
   upvoteThread
 } = require('../controllers/threadController');
+const {protect} = require('../middlewares/authMiddleware');
 
 router.get('/', getThreads);
 router.get('/:id', getThreadById);
 router.post('/', createThread);
-router.post('/:id/replies', addReply);
+router.post('/:id/replies', protect, addReply);
 router.post('/:id/upvote', upvoteThread);
 
 module.exports = router;

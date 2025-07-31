@@ -1,15 +1,62 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, Search, Filter, TrendingUp } from 'lucide-react';
 import ThreadCard from '../components/forum/ThreadCard';
 import { mockForumThreads, forumCategories } from '../data/mockData';
 
+interface Thread {
+  _id: string;
+  title: string;
+  content: string;
+  category: string;
+  tags: string[];
+  upvotes: number;
+  downvotes: number;
+  replyCount: number;
+  updatedAt: string;
+  isPinned: boolean;
+  author: {
+    name: string;
+    avatar: string;
+  };
+  createdAt: string;
+  replies: Array<{
+    _id: string;
+    content: string;
+    author: {
+      name: string;
+      avatar: string;
+    };
+    createdAt: string;
+  }>;
+  isLocked: boolean;
+}
+
 const Forum: React.FC = () => {
+  const [threads, setThreads] = useState<Thread[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('recent');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchThreads = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/threads');
+        const data = await res.json();
+        setThreads(data);
+      } catch (error) {
+        console.error('Failed to fetch threads:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchThreads();
+  }, []);
+
+
 
   const filteredThreads = useMemo(() => {
-    let threads = mockForumThreads.filter((thread) => {
+    let result = threads.filter((thread) => {
       // Category filter
       if (selectedCategory !== 'All' && thread.category !== selectedCategory) {
         return false;
@@ -29,20 +76,20 @@ const Forum: React.FC = () => {
     // Sort threads
     switch (sortBy) {
       case 'popular':
-        threads.sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes));
+        result.sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes));
         break;
       case 'replies':
-        threads.sort((a, b) => b.replyCount - a.replyCount);
+        result.sort((a, b) => b.replyCount - a.replyCount);
         break;
       case 'recent':
       default:
-        threads.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        result.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
         break;
     }
 
     // Pin pinned threads to top
-    return threads.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
-  }, [selectedCategory, searchQuery, sortBy]);
+    return result.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+  }, [threads, selectedCategory, searchQuery, sortBy]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -140,7 +187,7 @@ const Forum: React.FC = () => {
         ) : (
           <div className="space-y-4">
             {filteredThreads.map((thread) => (
-              <ThreadCard key={thread.id} thread={thread} />
+              <ThreadCard key={thread._id} thread={thread} />
             ))}
           </div>
         )}

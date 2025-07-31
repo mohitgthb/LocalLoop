@@ -12,6 +12,7 @@ import Forum from './pages/Forum';
 import ForumThread from './pages/ForumThread';
 import LoginForm from './components/auth/LoginForm';
 import RegisterForm from './components/auth/RegisterForm';
+import Admin from './pages/Admin';
 
 function App() {
   return (
@@ -28,9 +29,10 @@ function App() {
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/forum" element={<Forum />} />
-              <Route path="/forum/:threadId" element={<ForumThread />} />
+              <Route path="/forum/:_id" element={<ForumThread />} />
               <Route path="/login" element={<LoginForm />} />
               <Route path="/register" element={<RegisterForm />} />
+              <Route path="/admin" element={<Admin />} />
             </Routes>
           </main>
           <Footer />
