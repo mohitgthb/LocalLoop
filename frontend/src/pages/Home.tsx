@@ -115,7 +115,7 @@ const Home: React.FC = () => {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {featuredBusinesses.map((business) => (
-              <BusinessCard key={business.id} business={business} />
+              <BusinessCard key={business._id} business={business} />
             ))}
           </div>
         </div>
@@ -144,7 +144,7 @@ const Home: React.FC = () => {
             </div>
             <div className="space-y-6">
               {featuredPosts.slice(1, 3).map((post) => (
-                <BlogCard key={post.id} post={post} />
+                <BlogCard key={post._id} post={post} />
               ))}
             </div>
           </div>

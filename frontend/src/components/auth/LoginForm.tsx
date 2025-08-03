@@ -13,27 +13,30 @@ const LoginForm: React.FC = () => {
   const navigate = useNavigate();
 
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+ const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-      const data = await res.json();
-      if (res.ok) {
-        login(data.token, data.user);
-        navigate('/');
-        alert('Logged in!');
-      } else {
-        alert(data.message || 'Error');
-      }
-    } catch (err) {
-      console.error(err);
+  try {
+    const res = await fetch('http://localhost:5000/api/auth/login', {
+      method: 'POST',
+      credentials: 'include', // ✅ send cookies!
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      login(data.user); // ✅ store user in context only!
+      navigate('/');
+    } else {
+      alert(data.message || 'Login failed.');
     }
-  };
+  } catch (err) {
+    console.error('Login error:', err);
+  }
+};
+
   // const handleSubmit = async (e: React.FormEvent) => {
   //   e.preventDefault();
   //   setError('');

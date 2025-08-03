@@ -101,7 +101,6 @@ const BusinessDetail: React.FC = () => {
 
   if (!business) return;
 
-  console.log(localStorage.getItem('user'));
   console.log("Current user:", user);
 
   const newReview = {
@@ -112,10 +111,11 @@ const BusinessDetail: React.FC = () => {
   try {
     const res = await fetch(`http://localhost:5000/api/businesses/${business._id}/reviews`, {
       method: 'POST',
+      credentials: 'include', // ✅ send cookies!
       headers: {
         'Content-Type': 'application/json',
         // ✅ If using JWT, send it:
-        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+       // 'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
       },
       body: JSON.stringify(newReview),
     });

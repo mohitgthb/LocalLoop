@@ -17,38 +17,68 @@ const RegisterForm: React.FC = () => {
   const navigate = useNavigate();
 
 
-  const handleRegister = async (e: React.FormEvent) => {
+
+const handleRegister = async (e: React.FormEvent) => {
   e.preventDefault();
 
   if (password !== confirmPassword) {
-    setError('Passwords do not match');
-    return;
-  }
-
-  if (password.length < 6) {
-    setError('Password must be at least 6 characters long');
+    alert('Passwords do not match');
     return;
   }
 
   try {
     const res = await fetch('http://localhost:5000/api/auth/register', {
       method: 'POST',
+      credentials: 'include', // ✅ send cookies!
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password }),
     });
 
     const data = await res.json();
+
     if (res.ok) {
-      login(data.token, data.user);
+      login(data.user); // ✅ store user in context only!
       navigate('/');
     } else {
-      setError(data.message || 'Error');
+      alert(data.message || 'Registration failed.');
     }
   } catch (err) {
-    console.error(err);
-    setError('Something went wrong');
+    console.error('Register error:', err);
   }
 };
+
+//   const handleRegister = async (e: React.FormEvent) => {
+//   e.preventDefault();
+
+//   if (password !== confirmPassword) {
+//     setError('Passwords do not match');
+//     return;
+//   }
+
+//   if (password.length < 6) {
+//     setError('Password must be at least 6 characters long');
+//     return;
+//   }
+
+//   try {
+//     const res = await fetch('http://localhost:5000/api/auth/register', {
+//       method: 'POST',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify({ name, email, password }),
+//     });
+
+//     const data = await res.json();
+//     if (res.ok) {
+//       login(data.token, data.user);
+//       navigate('/');
+//     } else {
+//       setError(data.message || 'Error');
+//     }
+//   } catch (err) {
+//     console.error(err);
+//     setError('Something went wrong');
+//   }
+// };
 
 
   // const handleSubmit = async (e: React.FormEvent) => {

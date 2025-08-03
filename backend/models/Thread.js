@@ -1,28 +1,55 @@
 const mongoose = require('mongoose');
+const { Schema } = mongoose;
 
-const replySchema = new mongoose.Schema({
- 
-    content: String,
-    author: {
-      name: String,
-      avatar: String,
-    },
-    createdAt: Date,
-    upvotes: Number,
-    downvotes: Number,
-  
+const replySchema = new Schema({
+  content: String,
+  author: {
+    name: String,
+    avatar: String,
+  },
+  authorId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  upvotes: {
+    type: Number,
+    default: 0,
+  },
+  downvotes: {
+    type: Number,
+    default: 0,
+  },
 });
 
-const threadSchema = new mongoose.Schema({
+const threadSchema = new Schema({
   title: String,
   content: String,
   category: String,
   tags: [String],
-  upvotes: Number,
-  downvotes: Number,
-  replyCount: Number,
-  isPinned: Boolean,
-  isLocked: Boolean,
+  upvotes: {
+    type: Number,
+    default: 0,
+  },
+  downvotes: {
+    type: Number,
+    default: 0,
+  },
+  replyCount: {
+    type: Number,
+    default: 0,
+  },
+  isPinned: {
+    type: Boolean,
+    default: false,
+  },
+  isLocked: {
+    type: Boolean,
+    default: false,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -34,6 +61,10 @@ const threadSchema = new mongoose.Schema({
   author: {
     name: String,
     avatar: String,
+  },
+  authorId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
   },
   replies: [replySchema],
 });

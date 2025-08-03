@@ -43,9 +43,10 @@ exports.addReply = async (req, res) => {
     const reply = {
       content: req.body.content,
       author: {
-        name: req.user.name, // ✅ from JWT user
-        avatar: req.user.avatar || '', // if you store avatar
+        name: req.user.name, // from JWT
+        avatar: req.user.avatar || '',
       },
+      authorId: req.user._id,
       createdAt: new Date(),
       upvotes: 0,
       downvotes: 0,
@@ -56,12 +57,18 @@ exports.addReply = async (req, res) => {
 
     await thread.save();
 
-    res.status(200).json(thread);
+    //Socket.io, send notification:
+    const io = req.app.get('io');
+    io.to(thread.authorId.toString()).emit('newNotification', {
+      type: 'reply',
+      message: `${req.user.name} replied to your thread.`,
+      threadId: thread._id,
+    });
+     res.status(200).json(thread);
   } catch (error) {
     res.status(500).json({ message: "Error adding reply", error });
   }
 };
-
 
 // Upvote thread
 exports.upvoteThread = async (req, res) => {

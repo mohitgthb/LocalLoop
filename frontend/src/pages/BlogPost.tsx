@@ -75,9 +75,10 @@ const BlogPost: React.FC = () => {
     try {
       const res = await fetch(`http://localhost:5000/api/posts/${slug}/comments`, {
         method: 'POST',
+        credentials: 'include',//
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+          // 'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         },
         body: JSON.stringify({
           content: newComment,
@@ -103,9 +104,10 @@ const BlogPost: React.FC = () => {
     try {
       const res = await fetch(`http://localhost:5000/api/posts/${slug}/dislike`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+          // 'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
         },
       });
 
@@ -122,9 +124,10 @@ const BlogPost: React.FC = () => {
     try {
       const res = await fetch(`http://localhost:5000/api/posts/${slug}/like`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+          // 'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
         },
       });
 

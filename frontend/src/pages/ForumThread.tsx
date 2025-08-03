@@ -41,9 +41,9 @@ interface Thread {
 }
 
 const ForumThread: React.FC = () => {
-  const { user, token } = useAuth(); // Get current user from context
+  const { user } = useAuth(); // ✅ ONLY user
   const { _id } = useParams<{ _id: string }>();
-  // const thread = mockForumThreads.find(t => t._id === threadId);
+
   const [thread, setThread] = useState<Thread | null>(null);
   const [loading, setLoading] = useState(true);
   const [replyContent, setReplyContent] = useState('');
@@ -63,33 +63,32 @@ const ForumThread: React.FC = () => {
     };
     fetchThread();
   }, [_id]);
-  
 
   const handleSubmitReply = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!thread) return;
+    e.preventDefault();
+    if (!thread) return;
 
-  try {
-    const res = await fetch(`http://localhost:5000/api/threads/${thread._id}/replies`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`, // ✅ attach JWT
-      },
-      body: JSON.stringify({ content: replyContent }),
-    });
+    try {
+      const res = await fetch(`http://localhost:5000/api/threads/${thread._id}/replies`, {
+        method: 'POST',
+        credentials: 'include', // ✅ send cookies!
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: replyContent }),
+      });
 
-    if (!res.ok) {
-      throw new Error('Failed to post reply');
+      if (!res.ok) {
+        throw new Error('Failed to post reply');
+      }
+
+      const updatedThread = await res.json();
+      setThread(updatedThread);
+      setReplyContent('');
+    } catch (err) {
+      console.error('Error submitting reply:', err);
     }
-
-    const updatedThread = await res.json();
-    setThread(updatedThread); // ✅ update local thread
-    setReplyContent('');
-  } catch (err) {
-    console.error('Error submitting reply:', err);
-  }
-};
+  };
 
   if (loading) {
     return (
